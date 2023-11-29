@@ -72,7 +72,7 @@ class SubdomainScanner:
     def __init__(self, target_url):
         self.target_url = target_url
 
-    def scan_subdomains(self, url, wordlist):
+    def scan(self, url, wordlist):
         target_url = url or self.target_url
         subdomains = set()
         p = st.progress(0.0)
@@ -81,10 +81,20 @@ class SubdomainScanner:
         for w, word in enumerate(wordlist):
             subdomain = f"{word}.{target_url}"
             p.progress(w / sz, f"Scanning {subdomain}")
+            if len(subdomains) ==0 :
+                try:
+                    response = requests.get(f"https://zzzzzzzzzzzzzzzzzzzzzzzzzz{subdomain}", timeout=0.1)
+                    st.info(f"Wildcards Forwarding to main..")
+                    subdomains.add("www")
+                    break
+                except:
+                    subdomains.add("www")
+                    continue
             try:
-                response = requests.get(f"https://{subdomain}", timeout=5)
+
+                response = requests.get(f"https://{subdomain}", timeout=0.1)
                 if response.status_code == 200:
-                    subdomains.add(subdomain)
+                    subdomains.add(word)
                     st.write(f"https://{subdomain}")
             except:
                 pass
