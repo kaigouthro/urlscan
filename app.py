@@ -24,29 +24,33 @@ class DirectoryScanner:
         self.target_url = target_url
         self.directories = []
 
-    def scan(self, url, directoriees):
+    def scan(self, url, directoriees, sites = None):
         """
         Scan directories from the target URL.
 
         This method sends a HTTP GET request to the target URL and extracts
         directory URLs found in the response.
         """
-        target_url = url or self.target_url
-        subdomains = set()
-        p = st.progress(0.0)
-        sz = len(directoriees)
-
-        for w, word in enumerate(directoriees):
-            subdomain = f"{target_url}/{word}"
-            p.progress(w / sz, f"Scanning {subdomain}")
-            try:
-                response = requests.get(f"https://{subdomain}", timeout=5)
-                if response.status_code == 200:
-                    subdomains.add(subdomain)
-                    st.write(f"https://{subdomain}")
-            except:
-                pass
-        p.empty()
+        urls = sites or  [url]
+        for url in urls:
+            if url.startswith(r"http.?:\/\/"):
+                url = url.split("//")[1]
+            target_url = url or self.target_url
+            subdomains = set()
+            p = st.progress(0.0)
+            sz = len(directoriees)
+    
+            for w, word in enumerate(directoriees):
+                subdomain = f"{target_url}/{word}"
+                p.progress(w / sz, f"Scanning {subdomain}")
+                try:
+                    response = requests.get(f"https://{subdomain}", timeout=5)
+                    if response.status_code == 200:
+                        subdomains.add(subdomain)
+                        st.write(f"https://{subdomain}")
+                except:
+                    pass
+            p.empty()
         return subdomains
 
     @staticmethod
@@ -71,8 +75,10 @@ class DirectoryScanner:
 class SubdomainScanner:
     def __init__(self, target_url):
         self.target_url = target_url
-
+        
     def scan(self, url, wordlist):
+        if url.startswith(r"http.?:\/\/"):
+            url = url.split("//")[1]
         target_url = url or self.target_url
         subdomains = set()
         p = st.progress(0.0)
@@ -84,17 +90,16 @@ class SubdomainScanner:
             if len(subdomains) ==0 :
                 try:
                     response = requests.get(f"https://zzzzzzzzzzzzzzzzzzzzzzzzzz{subdomain}", timeout=0.1)
-                    st.info(f"Wildcards Forwarding to main..")
-                    subdomains.add("www")
-                    break
+                    st.error("Wildcards Forwarding to main..")
+                    st.stop()
                 except:
                     subdomains.add("www")
                     continue
             try:
 
-                response = requests.get(f"https://{subdomain}", timeout=0.1)
+                response = requests.get(f"https://{subdomain}", timeout=1)
                 if response.status_code == 200:
-                    subdomains.add(word)
+                    subdomains.add(subdomain)
                     st.write(f"https://{subdomain}")
             except:
                 pass
@@ -106,28 +111,32 @@ class UrlParameterScanner:
         self.target_url = url
         self.parameters = {"keys": keys or [], **kwargs}
 
-    def scan(self,url = None, parameters = None):
-
-        parsed_url = urlparse(url or self.target_url)
-        base_url = parsed_url.scheme + "://" + parsed_url.netloc
-        query_string = parsed_url.query
-        matches = {} # key : [values]
-        if query_string:
-            params =parameters or  parse_qs(query_string)
-            for parameter, values in params.items():
-                self.parameters[parameter] = values
-        dispfound = st.empty()
-        disp      = st.empty()
-        for parameter, values in self.parameters.items():
-            for value in values:
-                url = base_url + "?" + parameter + "=" + value
-                response = requests.get(url)
-                if response.status_code == 200:
-                    matches[parameter].append(value)
-                    dispfound.write("Potential vulnerability found:", parameter, value)
-                else:
-                    disp.write("Not vulnerable:", url)
-
+    def scan(self,url = None, parameters = None, sites = None):
+        urls = sites or  [url]
+        for url in urls:
+            if url.startswith(r"http.?:\/\/"):
+                url = url.split("//")[1]           
+            parsed_url = urlparse(url or self.target_url)
+            base_url = parsed_url.scheme + "://" + parsed_url.netloc
+            query_string = parsed_url.query
+            matches = {} # key : [values]
+            if query_string:
+                params =parameters or  parse_qs(query_string)
+                for parameter, values in params.items():
+                    self.parameters[parameter] = values
+            dispfound = st.empty()
+            disp      = st.empty()
+            for parameter, values in self.parameters.items():
+                for value in values:
+                    url = base_url + "?" + parameter + "=" + value
+                    response = requests.get(url)
+                    
+                    if response.status_code == 200:
+                        matches[parameter].append(value)
+                        dispfound.write("Potential vulnerability found:", parameter, value)
+                    else:
+                        disp.write("Not vulnerable:", url)
+    
     def get_parameters(self):
         return self.parameters
 
