@@ -214,7 +214,7 @@ def filter_wordlist(wordlist, threshold):
 
 # Create the Streamlit app
 def main():
-    st.title("Web Scanner")
+    TOP.title("Web Scanner")
 
     # Options for selecting the scanner type
     scanner_type = st.sidebar.selectbox(
