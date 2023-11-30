@@ -219,9 +219,9 @@ def main():
     # Options for selecting the scanner type
     scanner_type = st.sidebar.selectbox(
         "Select Scanner:", [
-            "Subdomain Scanner"
+            "Subdomain Scanner",
             "Directory Scanner",
-            "URL Parameter Scanner",
+            "URL Parameter Scanner"
             ],  0)
 
     word_list = DICTIONARIES[st.sidebar.selectbox("Enter Word List:", list(DICTIONARIES.keys()))]
