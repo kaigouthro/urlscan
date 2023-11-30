@@ -5,6 +5,13 @@ import requests
 import streamlit as st
 from bs4 import BeautifulSoup
 
+TOP      = st.container()
+MAINAREA = st.columns(2)
+LEFT     = MAINAREA[0]
+RIGHT    = MAINAREA[1]
+inputs   = LEFT.empty()
+listview = RIGHT.empty()
+
 
 class DirectoryScanner:
     """
@@ -32,26 +39,26 @@ class DirectoryScanner:
         directory URLs found in the response.
         """
         urls = sites or  [url]
+        full_urls = set()
         for url in urls:
             if url.startswith(r"http.?:\/\/"):
                 url = url.split("//")[1]
             target_url = url or self.target_url
-            subdomains = set()
-            p = st.progress(0.0)
+            p = TOP.progress(0.0)
             sz = len(directoriees)
     
             for w, word in enumerate(directoriees):
-                subdomain = f"{target_url}/{word}"
-                p.progress(w / sz, f"Scanning {subdomain}")
+                full_url = f"{target_url}/{word}"
+                p.progress(w / sz, f"Scanning {full_url}")
                 try:
-                    response = requests.get(f"https://{subdomain}", timeout=5)
+                    response = requests.get(f"https://{full_url}", timeout=5)
                     if response.status_code == 200:
-                        subdomains.add(subdomain)
-                        st.write(f"https://{subdomain}")
+                        full_urls.add(full_url)
+                        RIGHT.write(f"https://{full_url}")
                 except:
                     pass
             p.empty()
-        return subdomains
+        return list(full_urls)
 
     @staticmethod
     def extract_directories(response_text):
@@ -81,7 +88,7 @@ class SubdomainScanner:
             url = url.split("//")[1]
         target_url = url or self.target_url
         subdomains = set()
-        p = st.progress(0.0)
+        p = TOP.progress(0.0)
         sz = len(wordlist)
 
         for w, word in enumerate(wordlist):
@@ -90,7 +97,7 @@ class SubdomainScanner:
             if len(subdomains) ==0 :
                 try:
                     response = requests.get(f"https://zzzzzzzzzzzzzzzzzzzzzzzzzz{subdomain}", timeout=0.1)
-                    st.error("Wildcards Forwarding to main..")
+                    TOP.error("Wildcards Forwarding to main..")
                     st.stop()
                 except:
                     subdomains.add("www")
@@ -100,7 +107,7 @@ class SubdomainScanner:
                 response = requests.get(f"https://{subdomain}", timeout=1)
                 if response.status_code == 200:
                     subdomains.add(subdomain)
-                    st.write(f"https://{subdomain}")
+                    RIGHT.write(f"https://{subdomain}")
             except:
                 pass
         p.empty()
@@ -124,8 +131,8 @@ class UrlParameterScanner:
                 params =parameters or  parse_qs(query_string)
                 for parameter, values in params.items():
                     self.parameters[parameter] = values
-            dispfound = st.empty()
-            disp      = st.empty()
+            dispfound = TOP.empty()
+            disp      = RIGHT.empty()
             for parameter, values in self.parameters.items():
                 for value in values:
                     url = base_url + "?" + parameter + "=" + value
@@ -212,27 +219,26 @@ def main():
     # Options for selecting the scanner type
     scanner_type = st.sidebar.selectbox(
         "Select Scanner:", [
+            "Subdomain Scanner"
             "Directory Scanner",
             "URL Parameter Scanner",
-            "Subdomain Scanner"
             ],  0)
 
     word_list = DICTIONARIES[st.sidebar.selectbox("Enter Word List:", list(DICTIONARIES.keys()))]
-    target_url = st.text_input("Enter Target URL:")
+    target_url = LEFT.text_input("Enter Target URL:")
     found_addresses = {"sites": { "example.com" :{ "subdomains":
         { "www" : { "directoriees":[]}}}}}
 
     st.session_state['found_addresses'] = st.session_state.get ("found_addresses", found_addresses)
-    disparea = st.empty()
     scanners = {
         "Subdomain Scanner": SubdomainScanner,
         "Directory Scanner": DirectoryScanner,
         "URL Parameter Scanner": UrlParameterScanner
     }
 
-    if scanner_type and st.button(scanner_type, key="scantype"):
+    if scanner_type and LEFT.button(scanner_type, key="scantype"):
         scanner = scanners[scanner_type](target_url)
-        st.text(scanner_type.replace(" Scanner", ":"))
+        RIGHT.text(f'{scanner_type.split("Scanner")[0]} {target_url}')
         # change thhe classes above before writing
         output = scanner.scan(target_url, word_list)
         if target_url in st.session_state['found_addresses']["sites"]:
@@ -243,7 +249,7 @@ def main():
             st.session_state['found_addresses']["sites"][target_url]["directoriees"] = output
         if isinstance(scanner , UrlParameterScanner):
             st.session_state['found_addresses']["sites"][target_url]["parameters"] = output
-        disparea.write(st.session_state['found_addresses'])
+        LEFT.write(st.session_state['found_addresses'])
 
                 # scan for subdomains, then eachh subdomain for subdirectories, and scan each subdirectory for parameters
 
