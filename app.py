@@ -158,11 +158,13 @@ def load_word_list(url):
 def get_dictionary_name(url):
     return url.split("/")[-1].split(".")[0]
 
+user_wordlist = st.text_input("URL to cusom wordlis .txt file")
 
 WORD_LIST_URLS = [
     "https://raw.githubusercontent.com/n0kovo/n0kovo_subdomains/main/n0kovo_subdomains_tiny.txt",
     "https://raw.githubusercontent.com/xajkep/wordlists/master/discovery/directory_only_one.small.txt",
     "https://raw.githubusercontent.com/Damian89/xssfinder/master/wordlists/params.txt",
+    user_wordlist
 ]
 
 
@@ -222,8 +224,8 @@ def main():
     st.session_state['found_addresses'] = st.session_state.get ("found_addresses", found_addresses)
     disparea = st.empty()
     scanners = {
-        "Directory Scanner": DirectoryScanner,
         "Subdomain Scanner": SubdomainScanner,
+        "Directory Scanner": DirectoryScanner,
         "URL Parameter Scanner": UrlParameterScanner
     }
 
