@@ -94,7 +94,7 @@ class SubdomainScanner:
 
         for w, word in enumerate(wordlist):
             subdomain = f"{word}.{target_url}"
-            p.progress((w + 1) / (1+sz) * 100, f"Scanning {subdomain}")
+            p.progress(w  / (1+sz) * 100, f"Scanning {subdomain}")
             if len(subdomains) == 0:
                 response = requests.get(
                     f"https://zzzzzzzzzzzzzzzzzzzzzzzzzz{subdomain}", timeout=0.1
