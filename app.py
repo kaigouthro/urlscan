@@ -95,14 +95,14 @@ class SubdomainScanner:
         for w, word in enumerate(wordlist):
             subdomain = f"{word}.{target_url}"
             p.progress(w  / (1+sz) * 100, f"Scanning {subdomain}")
-            if len(subdomains) == 0:
-                response = requests.get(
-                    f"https://zzzzzzzzzzzzzzzzzzzzzzzzzz{subdomain}", timeout=0.1
-                )
-                TOP.error("Wildcards Forwarding to main..")
-                if response:
+            if w <= 2:
+                try:
+                    socket.gethostbyname(subdomain)
+                    subdomains.add(subdomain)
+                    RIGHT.write(f"https://abcdefg12341234123412341234.{target_url}")
+                except:
+                    st.error(f"Error: {target_url} is likel accepting all subbdomais.")
                     st.stop()
-
             try:
                 response = requests.get(f"https://{subdomain}", timeout=1)
                 if response.status_code == 200:
