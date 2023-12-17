@@ -234,48 +234,51 @@ def main():
         scanner = scanners[scanner_type](target_url)
         RIGHT.text(f"{scanner_type.split(' Scanner')[0]} {target_url}")
 
-        if "found_addresses" in st.session_state:
-            if target_url in st.session_state["found_addresses"]["sites"]:
-                st.session_state["found_addresses"]["sites"][target_url] = {
-                    "subdomains": {}
-                }
+        st.session_state["found_addresses"] =  st.session_state.get("found_addresses", {})
+        found_sites = st.session_state["found_addresses"]
 
-            if isinstance(scanner, SubdomainScanner):
-                output = scanner.scan(target_url, word_list)
-                st.session_state["found_addresses"]["sites"][target_url][
-                    "subdomains"
-                ] = output
 
-            if isinstance(scanner, DirectoryScanner):
-                output = scanner.scan(target_url, word_list)
-                st.session_state["found_addresses"]["sites"][target_url][
-                    "directoriees"
-                ] = output
+        if target_url in found_sites["sites"]:
+            found_sites["sites"][target_url] = {
+                "subdomains": {}
+            }
 
-            if isinstance(scanner, UrlParameterScanner):
+        if isinstance(scanner, SubdomainScanner):
+            output = scanner.scan(target_url, word_list)
+            found_sites["sites"][target_url][
+                "subdomains"
+            ] = output
 
-                parameter_names = parameters.get("objects")
-                parameter_values = parameters.get("passwords")
-                filtered_parameters = {
-                    k: v for k, v in parameters.items() if k in parameter_names
-                }
-                filtered_values = set(
-                    parameter
-                    for k, v in filtered_parameters.items()
-                    for parameter in v
-                    if parameter in parameter_values
-                )
-                output = scanner.scan(
-                    target_url, parameters=filtered_parameters, sites=filtered_values
-                )
-                st.session_state["found_addresses"]["sites"][target_url][
-                    "parameters"
-                ] = output
+        if isinstance(scanner, DirectoryScanner):
+            output = scanner.scan(target_url, word_list)
+            found_sites["sites"][target_url][
+                "directoriees"
+            ] = output
 
-            with open(json_file_path, "w") as json_file:
-                json.dump(st.session_state["found_addresses"], json_file)
+        if isinstance(scanner, UrlParameterScanner):
 
-            LEFT.write(st.session_state["found_addresses"])
+            parameter_names = parameters.get("objects")
+            parameter_values = parameters.get("passwords")
+            filtered_parameters = {
+                k: v for k, v in parameters.items() if k in parameter_names
+            }
+            filtered_values = set(
+                parameter
+                for k, v in filtered_parameters.items()
+                for parameter in v
+                if parameter in parameter_values
+            )
+            output = scanner.scan(
+                target_url, parameters=filtered_parameters, sites=filtered_values
+            )
+            found_sites["sites"][target_url][
+                "parameters"
+            ] = output
+
+        with open(json_file_path, "w") as json_file:
+            json.dump(found_sites, json_file)
+
+        LEFT.write(found_sites)
 
 
 if __name__ == "__main__":
