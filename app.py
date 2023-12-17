@@ -202,6 +202,17 @@ PARAMETER_LIST = {
     "passwords" : "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Passwords/cirt-default-passwords.txt"
     }
 
+scanners = {
+    "Subdomain Scanner": SubdomainScanner,
+    "Directory Scanner": DirectoryScanner,
+    "URL Parameter Scanner": UrlParameterScanner
+}
+WORD_LIST_URLS = [
+    "https://raw.githubusercontent.com/n0kovo/n0kovo_subdomains/main/n0kovo_subdomains_tiny.txt",
+    "https://raw.githubusercontent.com/xajkep/wordlists/master/discovery/directory_only_one.small.txt",
+    "https://raw.githubusercontent.com/Damian89/xssfinder/master/wordlists/params.txt",
+]
+
 def main():
     TOP.title("Web Scanner")
     scanner_type = st.sidebar.selectbox(
@@ -245,18 +256,9 @@ def main():
 
             LEFT.write(st.session_state["found_addresses"])
 
+
+
 if __name__ == "__main__":
-    WORD_LIST_URLS = [
-        "https://raw.githubusercontent.com/n0kovo/n0kovo_subdomains/main/n0kovo_subdomains_tiny.txt",
-        "https://raw.githubusercontent.com/xajkep/wordlists/master/discovery/directory_only_one.small.txt",
-        "https://raw.githubusercontent.com/Damian89/xssfinder/master/wordlists/params.txt",
-    ]
 
-
-    scanners = {
-        "Subdomain Scanner": SubdomainScanner,
-        "Directory Scanner": DirectoryScanner,
-        "URL Parameter Scanner": UrlParameterScanner
-    }
 
     main()
