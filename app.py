@@ -16,6 +16,7 @@ RIGHT = MAINAREA[1]
 inputs = LEFT.empty()
 listview = RIGHT.empty()
 
+
 class PortScanner:
     def __init__(self, target_ip, port_range):
         self.target_ip = target_ip
@@ -95,14 +96,13 @@ class SubdomainScanner:
             subdomain = f"{word}.{target_url}"
             p.progress((w + 1) / sz * 100, f"Scanning {subdomain}")
             if len(subdomains) == 0:
-                try:
-                    response = requests.get(f"https://zzzzzzzzzzzzzzzzzzzzzzzzzz{subdomain}", timeout=0.1)
-                    TOP.error("Wildcards Forwarding to main..")
-                    if response:
-                        st.stop()
-                except:
-                    subdomains.add("www")
-                    continue
+                response = requests.get(
+                    f"https://zzzzzzzzzzzzzzzzzzzzzzzzzz{subdomain}", timeout=0.1
+                )
+                TOP.error("Wildcards Forwarding to main..")
+                if response:
+                    st.stop()
+
             try:
                 response = requests.get(f"https://{subdomain}", timeout=1)
                 if response.status_code == 200:
@@ -143,7 +143,9 @@ class UrlParameterScanner:
 
                     if response.status_code == 200:
                         matches[parameter].append(value)
-                        dispfound.write("Potential vulnerability found:", parameter, value)
+                        dispfound.write(
+                            "Potential vulnerability found:", parameter, value
+                        )
                     else:
                         disp.write("Not vulnerable:", url)
 
@@ -197,21 +199,23 @@ def calculate_likelihood(word, wordlist):
     nltk_likelihood = 1 - nltk_likelihood
     nltk_likelihood = min(max(nltk_likelihood, 0), 1)
 
+
 PARAMETER_LIST = {
-    "objects" : "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Discovery/Web-Content/api/objects.txt",
-    "passwords" : "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Passwords/cirt-default-passwords.txt"
-    }
+    "objects": "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Discovery/Web-Content/api/objects.txt",
+    "passwords": "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Passwords/cirt-default-passwords.txt",
+}
 
 scanners = {
     "Subdomain Scanner": SubdomainScanner,
     "Directory Scanner": DirectoryScanner,
-    "URL Parameter Scanner": UrlParameterScanner
+    "URL Parameter Scanner": UrlParameterScanner,
 }
 WORD_LIST_URLS = [
     "https://raw.githubusercontent.com/n0kovo/n0kovo_subdomains/main/n0kovo_subdomains_tiny.txt",
     "https://raw.githubusercontent.com/xajkep/wordlists/master/discovery/directory_only_one.small.txt",
     "https://raw.githubusercontent.com/Damian89/xssfinder/master/wordlists/params.txt",
 ]
+
 
 def main():
     TOP.title("Web Scanner")
@@ -232,24 +236,41 @@ def main():
 
         if "found_addresses" in st.session_state:
             if target_url in st.session_state["found_addresses"]["sites"]:
-                st.session_state["found_addresses"]["sites"][target_url] = {"subdomains": {}}
+                st.session_state["found_addresses"]["sites"][target_url] = {
+                    "subdomains": {}
+                }
 
             if isinstance(scanner, SubdomainScanner):
                 output = scanner.scan(target_url, word_list)
-                st.session_state["found_addresses"]["sites"][target_url]["subdomains"] = output
+                st.session_state["found_addresses"]["sites"][target_url][
+                    "subdomains"
+                ] = output
 
             if isinstance(scanner, DirectoryScanner):
                 output = scanner.scan(target_url, word_list)
-                st.session_state["found_addresses"]["sites"][target_url]["directoriees"] = output
+                st.session_state["found_addresses"]["sites"][target_url][
+                    "directoriees"
+                ] = output
 
             if isinstance(scanner, UrlParameterScanner):
 
                 parameter_names = parameters.get("objects")
                 parameter_values = parameters.get("passwords")
-                filtered_parameters = {k: v for k, v in parameters.items() if k in parameter_names}
-                filtered_values = set(parameter for k, v in filtered_parameters.items() for parameter in v if parameter in parameter_values)
-                output = scanner.scan(target_url, parameters=filtered_parameters, sites=filtered_values)
-                st.session_state["found_addresses"]["sites"][target_url]["parameters"] = output
+                filtered_parameters = {
+                    k: v for k, v in parameters.items() if k in parameter_names
+                }
+                filtered_values = set(
+                    parameter
+                    for k, v in filtered_parameters.items()
+                    for parameter in v
+                    if parameter in parameter_values
+                )
+                output = scanner.scan(
+                    target_url, parameters=filtered_parameters, sites=filtered_values
+                )
+                st.session_state["found_addresses"]["sites"][target_url][
+                    "parameters"
+                ] = output
 
             with open(json_file_path, "w") as json_file:
                 json.dump(st.session_state["found_addresses"], json_file)
@@ -257,8 +278,6 @@ def main():
             LEFT.write(st.session_state["found_addresses"])
 
 
-
 if __name__ == "__main__":
-
 
     main()
