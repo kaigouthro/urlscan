@@ -153,10 +153,15 @@ class UrlParameterScanner:
 
 def create_dictionaries(word_list_urls):
     dictionaries = {}
-    for url in word_list_urls:
-        word_list = load_word_list(url)
-        dictionary_name = get_dictionary_name(url)
-        dictionaries[dictionary_name] = word_list
+    if isinstance(word_list_urls, list):
+        for url in word_list_urls:
+            word_list = load_word_list(url)
+            dictionary_name = get_dictionary_name(url)
+            dictionaries[dictionary_name] = word_list
+    elif isinstance(word_list_urls, dict):
+        for dictionary_name, url in word_list_urls.items():
+            word_list = load_word_list(url)
+            dictionaries[dictionary_name] = word_list
     return dictionaries
 
 
@@ -193,8 +198,8 @@ def calculate_likelihood(word, wordlist):
     nltk_likelihood = min(max(nltk_likelihood, 0), 1)
 
 PARAMETER_LIST = {
-    "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Discovery/Web-Content/api/objects.txt",
-    "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Passwords/cirt-default-passwords.txt"
+    "objects" : "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Discovery/Web-Content/api/objects.txt",
+    "passwords" : "https://raw.githubusercontent.com/danielmiessler/SecLists/b19db4023a35d6180646cc3641718429addbfa64/Passwords/cirt-default-passwords.txt"
     }
 
 def main():
@@ -214,30 +219,31 @@ def main():
         scanner = scanners[scanner_type](target_url)
         RIGHT.text(f"{scanner_type.split(' Scanner')[0]} {target_url}")
 
-        if target_url in st.session_state["found_addresses"]["sites"]:
-            st.session_state["found_addresses"]["sites"][target_url] = {"subdomains": {}}
+        if "found_addresses" in st.session_state:
+            if target_url in st.session_state["found_addresses"]["sites"]:
+                st.session_state["found_addresses"]["sites"][target_url] = {"subdomains": {}}
 
-        if isinstance(scanner, SubdomainScanner):
-            output = scanner.scan(target_url, word_list)
-            st.session_state["found_addresses"]["sites"][target_url]["subdomains"] = output
+            if isinstance(scanner, SubdomainScanner):
+                output = scanner.scan(target_url, word_list)
+                st.session_state["found_addresses"]["sites"][target_url]["subdomains"] = output
 
-        if isinstance(scanner, DirectoryScanner):
-            output = scanner.scan(target_url, word_list)
-            st.session_state["found_addresses"]["sites"][target_url]["directoriees"] = output
+            if isinstance(scanner, DirectoryScanner):
+                output = scanner.scan(target_url, word_list)
+                st.session_state["found_addresses"]["sites"][target_url]["directoriees"] = output
 
-        if isinstance(scanner, UrlParameterScanner):
+            if isinstance(scanner, UrlParameterScanner):
 
-            parameter_names = st.sidebar.multiselect("Enter Parameter Names:", list(parameters.keys()))
-            parameter_values = st.sidebar.multiselect("Enter Parameter Values:", list(parameters.values()))
-            filtered_parameters = {k: v for k, v in parameters.items() if k in parameter_names}
-            filtered_values = set(parameter for k, v in filtered_parameters.items() for parameter in v if parameter in parameter_values)
-            output = scanner.scan(target_url, parameters=filtered_parameters, sites=filtered_values)
-            st.session_state["found_addresses"]["sites"][target_url]["parameters"] = output
+                parameter_names = parameters.get("objects")
+                parameter_values = parameters.get("passwords")
+                filtered_parameters = {k: v for k, v in parameters.items() if k in parameter_names}
+                filtered_values = set(parameter for k, v in filtered_parameters.items() for parameter in v if parameter in parameter_values)
+                output = scanner.scan(target_url, parameters=filtered_parameters, sites=filtered_values)
+                st.session_state["found_addresses"]["sites"][target_url]["parameters"] = output
 
-        with open(json_file_path, "w") as json_file:
-            json.dump(st.session_state["found_addresses"], json_file)
+            with open(json_file_path, "w") as json_file:
+                json.dump(st.session_state["found_addresses"], json_file)
 
-        LEFT.write(st.session_state["found_addresses"])
+            LEFT.write(st.session_state["found_addresses"])
 
 if __name__ == "__main__":
     WORD_LIST_URLS = [
