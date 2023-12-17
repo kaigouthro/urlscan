@@ -234,7 +234,8 @@ def main():
         scanner = scanners[scanner_type](target_url)
         RIGHT.text(f"{scanner_type.split(' Scanner')[0]} {target_url}")
 
-        st.session_state["found_addresses"] =  st.session_state.get("found_addresses", {})
+
+        st.session_state["found_addresses"] =  st.session_state.get("found_addresses", {"sites": {}})
         found_sites = st.session_state["found_addresses"]
 
 
