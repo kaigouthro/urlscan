@@ -14,6 +14,13 @@ RIGHT = MAINAREA[1]
 inputs = LEFT.empty()
 listview = RIGHT.empty()
 
+st.markdown("""
+    <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+    </style>
+""", unsafe_allow_html=True)
+
 
 class PortScanner:
     def __init__(self, target_ip: str, port_range: range):
