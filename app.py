@@ -174,8 +174,11 @@ class UrlParameterScanner:
     def only_test_keys(self,url,keys) -> Dict[str, List[str]]:
         urls = [f'{url}?{key}=value' for key in keys.split('\n')]
         found = []
+        progress_bar = TOP.progress(0.0)
         disp = RIGHT.empty()
-        for url in urls:
+        size = len(urls)
+        for i, url in  enumerate(urls):
+            progress_bar.progress((i / (1 + size)), f"Scanning {url}")
             response = requests.get(url)
             if response.status_code == 200:
                 found.append(url)
