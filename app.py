@@ -1,14 +1,11 @@
 import streamlit as st
 from urllib.parse import parse_qs, urlparse
 import nltk
-from typing import Dict, List, Optional, Any, Tuple, Union
+from typing import Dict, List, Optional, Any, Union
 import requests
-import streamlit as st
 from bs4 import BeautifulSoup
 import socket
 import json
-import shutil
-import os
 
 TOP = st.container()
 MAINAREA = st.columns(2)
@@ -40,8 +37,10 @@ class DirectoryScanner:
         self.target_url = target_url
         self.directories = []
 
-    def scan(self, _url : str, directories: List[str], sites: Optional[List[str]] = None) -> List[str]:
-        urls : List[str] = sites or [_url]
+    def scan(
+        self, _url: str, directories: List[str], sites: Optional[List[str]] = None
+    ) -> List[str]:
+        urls: List[str] = sites or [_url]
         full_urls = set()
         for url in urls:
             if url.startswith(r"http.?:\/\/"):
@@ -81,10 +80,9 @@ class SubdomainScanner:
 
     def scan_ports(self, ip: str) -> List[int]:
         port_scanner = PortScanner(ip, range(1, 100))
-        open_ports = port_scanner.scan()
-        return open_ports
+        return port_scanner.scan()
 
-    def scan(self, _url : str, wordlist: List[str]) -> Dict[str, Any]:
+    def scan(self, _url: str, wordlist: List[str]) -> Dict[str, Any]:
         if _url.startswith(r"http.?:\/\/"):
             _url = _url.split("//")[1]
         target_url = _url or self.target_url
@@ -98,13 +96,17 @@ class SubdomainScanner:
             progress_bar.progress((i / (1 + size)), f"Scanning {subdomain}")
             if i <= 2:
                 try:
-                    requests.get(f"https://abcdefg12341234123412341234.{target_url}", timeout=5)
+                    requests.get(
+                        f"https://abcdefg12341234123412341234.{target_url}", timeout=5
+                    )
                     st.error(f"Error: {target_url} is likely accepting all subdomains.")
                     st.stop()
                 except:
                     continue
             try:
-                socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((subdomain, 443))
+                socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(
+                    (subdomain, 443)
+                )
                 # response = requests.get(f"https://{subdomain}", timeout=5)
                 # if response.status_code == 200:
                 subdomains.add(subdomain)
@@ -122,22 +124,30 @@ class SubdomainScanner:
 
 
 class UrlParameterScanner:
-    def __init__(self, url: str, keys: Optional[List[str]] = None, **kwargs: Union[str, List[str]]):
+    def __init__(
+        self,
+        url: str,
+        keys: Optional[List[str]] = None,
+        **kwargs: Union[str, List[str]],
+    ):
         self.target_url = url
         self.parameters = {"keys": keys or [], **kwargs}
 
-    def scan(self, url: Optional[str] = None, parameters: Optional[Dict[str, List[str]]] = None, sites: Optional[List[str]] = None) -> List[Dict[str, List[str]]]:
+    def scan(
+        self,
+        url: Optional[str] = None,
+        parameters: Optional[Dict[str, List[str]]] = None,
+        sites: Optional[List[str]] = None,
+    ) -> List[Dict[str, List[str]]]:
         urls = sites or [url]
-        matched = []
         for url in urls:
             if url and url.startswith(r"http.?:\/\/"):
                 url = url.split("//")[1]
             parsed_url = urlparse(url or self.target_url)
-            base_url = parsed_url.scheme + "://" + parsed_url.netloc
-            query_string = parsed_url.query
+            base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
             matches = {}
 
-            if query_string:
+            if query_string := parsed_url.query:
                 params = parameters or parse_qs(query_string)
                 for parameter, values in params.items():
                     self.parameters[parameter] = values
@@ -146,22 +156,38 @@ class UrlParameterScanner:
             disp = RIGHT.empty()
             for parameter, values in self.parameters.items():
                 for value in values:
-                    url = base_url + "?" + parameter + "=" + value
+                    url = f"{base_url}?{parameter}={value}"
                     if url is not None:
                         response = requests.get(str(url))
-
                         if response.status_code == 200:
                             matches[parameter].append(value)
-                            dispfound.write("Potential vulnerability found:", parameter, value)
+                            dispfound.write(
+                                "Potential vulnerability found:", parameter, value
+                            )
                         else:
                             disp.write("Not vulnerable:", url)
-        return matched
+        return []
 
     def get_parameters(self) -> Dict[str, List[str]]:
         return self.parameters
 
+    def only_test_keys(self,url,keys) -> Dict[str, List[str]]:
+        urls = [f'{url}?{key}=value' for key in keys.split('\n')]
+        found = []
+        disp = RIGHT.empty()
+        for url in urls:
+            response = requests.get(url)
+            if response.status_code == 200:
+                found.append(url)
+                disp.write("Potential vulnerability found:", url)
+                with open('found.txt', 'a') as f:
+                    f.write(f'{url}\n')
+        return found
 
-def create_dictionaries(word_list_urls: Union[List[str], Dict[str, str]]) -> Dict[str, List[str]]:
+
+
+
+def create_dictionaries(word_list_urls: Union[List[str], Dict[str, str]], ) -> Dict[str, List[str]]:
     dictionaries = {}
     if isinstance(word_list_urls, list):
         for url in word_list_urls:
@@ -228,8 +254,12 @@ WORD_LIST_URLS = [
 
 def main():
     TOP.title("Web Scanner")
-    scanner_type = st.sidebar.selectbox("Select Scanner:", ["Subdomain Scanner", "Directory Scanner", "URL Parameter Scanner"], index=0)
-    WORDLISTS : Dict[str, List[str]] = create_dictionaries(WORD_LIST_URLS)
+    scanner_type = st.sidebar.selectbox(
+        "Select Scanner:",
+        ["Subdomain Scanner", "Directory Scanner", "URL Parameter Scanner"],
+        index=0,
+    )
+    WORDLISTS: Dict[str, List[str]] = create_dictionaries(WORD_LIST_URLS)
     st.sidebar.markdown("## Word Lists")
     word_list = st.sidebar.selectbox("Enter Word List:", WORDLISTS) or "objects"
     target_url = LEFT.text_input("Enter Target URL:")
@@ -242,7 +272,9 @@ def main():
         scanner = scanners[scanner_type](target_url)
         RIGHT.text(f"{scanner_type.split(' Scanner')[0]} {target_url}")
 
-        st.session_state["found_addresses"] = st.session_state.get("found_addresses", {"sites": {}})
+        st.session_state["found_addresses"] = st.session_state.get(
+            "found_addresses", {"sites": {}}
+        )
         found_sites = st.session_state["found_addresses"]
         if target_url not in found_sites:
             found_sites[target_url] = {}
@@ -262,12 +294,29 @@ def main():
             found_sites[target_url]["dirs"] = list(output)
 
         if isinstance(scanner, UrlParameterScanner):
-            parameter_names  = parameters.get("objects",[])
-            parameter_values = parameters.get("passwords",[])
-            filtered_parameters = {k: v for k, v in parameters.items() if k in parameter_names}
-            filtered_values = list(set(parameter for k, v in filtered_parameters.items() for parameter in v if parameter in parameter_values))
-            output = scanner.scan(target_url, parameters=filtered_parameters, sites=filtered_values)
-            found_sites[target_url]["parameters"] = list(output)
+            keys = open("params.txt", "r").read()
+            scanner.only_test_keys(target_url, keys)
+
+
+            # parameter_names = parameters.get("objects", [])
+            # parameter_values = parameters.get("passwords", [])
+            # filtered_parameters = {
+            #     k: v for k, v in parameters.items() if k in parameter_names
+            # }
+            # filtered_values = list(
+            #     set(
+            #         parameter
+            #         for k, v in filtered_parameters.items()
+            #         for parameter in v
+            #         if parameter in parameter_values
+            #     )
+            # )
+            # output = scanner.scan(
+            #     target_url, parameters=filtered_parameters, sites=filtered_values
+            # )
+            # found_sites[target_url]["parameters"] = list(output)
+
+
 
         with open(json_file_path, "w") as json_file:
             json.dump(found_sites, json_file)
