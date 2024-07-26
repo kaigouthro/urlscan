@@ -58,7 +58,7 @@ class DirectoryScanner:
 
             for i, directory in enumerate(directories):
                 full_url = f"{target_url}/{directory}"
-                progress_bar.progress((i + 1) / size * 100, f"Scanning {full_url}")
+                progress_bar.progress((i + 1)/(size+1), f"Scanning {full_url}")
                 try:
                     response = requests.get(f"https://{full_url}", timeout=5)
                     if response.status_code == 200:
